@@ -43,8 +43,8 @@ class ZombieSurvival:
             selection = self._show_menu()
             if selection == 'start':
                 self.start()
-            elif selection == 'options':
-                self._show_options()
+            elif selection == 'settings':
+                self._show_settings()
             else:
                 exit(0)
 
@@ -151,7 +151,7 @@ class ZombieSurvival:
                 print(f'{survivor.name}: "Juhu"')
 
     @staticmethod
-    def _show_menu() -> Optional[Literal['start', 'options']]:
+    def _show_menu() -> Optional[Literal['start', 'settings']]:
         result = prompt({
             'type': 'list',
             'name': 'selection',
@@ -163,7 +163,7 @@ class ZombieSurvival:
                 },
                 {
                     "name": "Einstellungen",
-                    "value": "options",
+                    "value": "settings",
                 },
                 {
                     "name": "Beenden",
@@ -173,7 +173,12 @@ class ZombieSurvival:
         })
         return result.get('selection')
 
-    def _show_options(self):
+    def _show_settings(self) -> NoReturn:
+        while True:
+            if not self._ask_settings():
+                return
+
+    def _ask_settings(self) -> bool:
         answer = prompt({
             'type': 'list',
             'name': 'option',
@@ -268,17 +273,16 @@ class ZombieSurvival:
 
         selected_option = answer.get('option')
         if selected_option is None:
-            return
+            return False
 
         option_name = selected_option.get('name')
         changed_option = prompt(selected_option).get(option_name)
 
         if changed_option is None:
-            self._show_options()
-            return
+            return False
 
         setattr(self, option_name, changed_option)
-        self._show_options()
+        return True
 
 
 if __name__ == '__main__':
