@@ -1,54 +1,76 @@
-from typing import Optional
+import random
+from typing import Optional, List
 
 from names import get_first_name, get_last_name
 
-__all__ = ['Survior', 'Zombie']
+__all__ = ['Humanoid']
 
 
-class Human:
+class Humanoid:
     _hit_chance: int
-    first_name: str
-    last_name: str
+    _hit_modifier: int
+    _defense_modifier: int
+    _zombie: bool
+    name: Optional[str]
+    evaded: bool
 
-    def __init__(self, hit_chance: int, first_name: Optional[str] = None, last_name: Optional[str] = None):
+    def __init__(self, hit_chance: int, is_zombie: bool = False, zombie_variety: int = None, weapon_variety: int = None, armor_variety: int = None):
+        self.name = f'{get_first_name()} {get_last_name()}'
         self.hit_chance = hit_chance
-        self.first_name = first_name or get_first_name()
-        self.last_name = last_name or get_last_name()
+        self._hit_modifier = 0
+        self._defense_modifier = 0
+        self._zombie = False
+        self.evaded = False
+
+        if is_zombie:
+            self.name = None
+            self.zombify(hit_chance=hit_chance, zombie_variety=zombie_variety)
+        else:
+            # Optional: Setup Weapons/Armors
+            self._defense_modifier = random.randint(0, armor_variety) if isinstance(armor_variety, int) else 0
+            self._hit_modifier = random.randint(0, weapon_variety) if isinstance(weapon_variety, int) else 0
+
+    def zombify(self, hit_chance: int, zombie_variety: int = None):
+        self._zombie = True
+        self.hit_chance = hit_chance
+        self._hit_modifier = random.randint(-zombie_variety, zombie_variety) if isinstance(zombie_variety, int) else 0
+        print(f'{self.name}: "Grrrrr"')
 
     @property
     def hit_chance(self) -> int:
-        return self._hit_chance
+        chance = self._hit_chance + self._hit_modifier
+        if not self._zombie and self.evaded:  # Optional
+            chance += 3
+        return chance
 
     @hit_chance.setter
     def hit_chance(self, value: int):
-        if value not in range(1, 100):
-            raise ValueError('Hit probability must be in range from 1 to 99', value)
-        self._hit_chance = value
+        if value >= 100:
+            self._hit_chance = 99
+        elif value < 1:
+            self._hit_chance = 1
+        else:
+            self._hit_chance = value
 
     @property
-    def name(self):
-        return f'{self.first_name} {self.last_name}'
+    def defense(self) -> int:
+        return self._defense_modifier
 
+    @property
+    def modifier_info(self):
+        modifier: List[str] = []
+        if self._hit_modifier:
+            modifier.append(f'{self._hit_modifier}⚔')
+        if self._defense_modifier:
+            modifier.append(f'{self._defense_modifier}🛡')
 
-class Survior(Human):
-    dead: bool = False
-    evaded: bool = False
-
-    @Human.hit_chance.getter
-    def hit_chance(self) -> int:
-        return self._hit_chance + 3 if self.evaded else self._hit_chance  # Optional
+        if modifier:
+            return f"({' '.join(modifier)})"
+        return ''
 
     def __bool__(self):
-        """ Quick way to determine if Survivor still is alive """
-        return not self.dead
+        """ Quick way to determine if Human is still alive """
+        return not self._zombie
 
-
-class Zombie(Human):
-
-    def __init__(self, hit_chance: int, first_name: Optional[str] = None, last_name: Optional[str] = None):
-        super().__init__(
-            hit_chance=hit_chance,
-            first_name='Zombie',
-            last_name=f'{first_name} {last_name}' if first_name else last_name
-        )
-        print(f'{self.name}: Grrrrr')
+    def __repr__(self):
+        return f'{self.name or ""}{self.modifier_info}'

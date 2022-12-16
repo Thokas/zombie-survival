@@ -3,78 +3,115 @@ import random
 import threading
 from datetime import datetime, timedelta
 from queue import Queue
-from typing import TypedDict, Optional, List, NoReturn
+from typing import Optional, List, NoReturn, Literal
 
-from PyInquirer import prompt
+from PyInquirer import prompt, Separator
 
-from models import Zombie, Survior
-from validators import ValidateCount, ValidateChance
-
-
-class GameParameters(TypedDict):
-    zombie_count: int
-    suvivor_count: int
-    hit_chance: int
-    zombify_chance: int
+from models import Humanoid
+from validators import validate_variety, validate_count, validate_chance
 
 
 class ZombieSurvival:
-    parameters: GameParameters
-    zombies: 'Queue[Zombie]'
-    survivors: List[Survior]
+    zombies: 'Queue[Humanoid]'
+    survivors: List[Humanoid]
+
+    # Base options
+    zombie_count: int
+    survivor_count: int
+    hit_chance: int
+    zombify_chance: int
+
+    # advanced options
+    storymode: bool
+    zombie_variety: Optional[int]
+    weapon_variety: Optional[int]
+    armor_variety: Optional[int]
 
     def __init__(self):
-        self.parameters = self.ask_game_parameters()
-        if not self.parameters:
-            return
+        self.zombie_count = 20
+        self.survivor_count = 5
+        self.hit_chance = 60
+        self.zombify_chance = 30
 
-        print('Die Nacht bricht an und die Zombies regen sich...')
+        self.storymode = True
+        self.zombie_variety = 0
+        self.weapon_variety = 0
+        self.armor_variety = 0
 
-        self.setup_game()
+    def run(self):
+        while True:
+            selection = self._show_menu()
+            if selection == 'start':
+                self.start()
+            elif selection == 'options':
+                self._show_options()
+            else:
+                exit(0)
 
-        execution_time = self.start_fights()
+    def start(self):
+        if self.storymode:
+            print('Die Nacht bricht an und die Zombies regen sich...')
 
-        print(f'Nach grade mal {round(execution_time.total_seconds(), 2)}s ist die Schlacht vorbei.')
+        self._setup_game()
+
+        execution_time = self._start_fights()
+        time_readable = round(execution_time.total_seconds(), 2)
+
+        if self.storymode:
+            print(f'Nach grade mal {time_readable}s ist die Schlacht vorbei.')
+        else:
+            print(f'Dauer: {time_readable}s')
 
         if any(self.survivors):
-            survived = [s for s in self.survivors if not s.dead]
-            died = [s for s in self.survivors if s.dead]
-            print(f'{len(survived)} haben überlebt, darunter sind:')
-            for survivor in survived:
-                print(f'  {survivor.name}')
-            if died:
-                print(f'{len(died)} sind gefallen, ihre Namen sind:')
-                for dead in died:
-                    print(f'  † {dead.name}')
+            survived = [s for s in self.survivors if s]
+            if self.storymode:
+                died = [s for s in self.survivors if not s]
+                if len(survived) == 1:
+                    print(f'Nur ein Überlebender steht noch:')
+                else:
+                    print(f'{len(survived)} haben überlebt, darunter sind:')
+                for survivor in survived:
+                    print(f'  {survivor}')
+                if died:
+                    print(f'{len(died)} sind gefallen, ihre Namen sind:')
+                    for dead_survivor in died:
+                        print(f'  † {dead_survivor}')
+            else:
+                print('Gewinner: Überlebende')
+                print(f'Anzahl: {len(survived)}')
         else:
-            zombies_alive: List[Zombie] = []
-            while not self.zombies.empty():
-                zombies_alive.append(self.zombies.get())
+            zombies_alive: List[Humanoid] = list(self.zombies.queue)
+            if self.storymode:
+                print('Leider überwältigten die Zombies alle Überlebenden.')
+                print(f'So streifen jetzt {len(zombies_alive)} Zombies weiter durch das Land.')
+            else:
+                print('Gewinner: Zombies')
+                print(f'Anzahl: {len(zombies_alive)}')
 
-            print('Leider überwältigten die Zombies alle Überlebenden.')
-            print(f'So streifen jetzt {len(zombies_alive)} Zombies weiter durch das Land.')
-
-        print('### ENDE ###')
-
-    def setup_game(self) -> NoReturn:
+    def _setup_game(self) -> NoReturn:
         # setup Surviors
         self.survivors = [
-            Survior(hit_chance=self.parameters['hit_chance'])
-            for _ in range(0, self.parameters['suvivor_count'])
+            Humanoid(hit_chance=self.hit_chance, armor_variety=self.armor_variety, weapon_variety=self.weapon_variety)
+            for _ in range(0, self.survivor_count)
         ]
 
         # setup Zombies
         self.zombies = Queue()
-        print(self.parameters)
-        for number in range(1, self.parameters['zombie_count'] + 1):
-            self.zombies.put(Zombie(hit_chance=self.parameters['zombify_chance'], last_name=f'{number}'))
+        for _ in range(1, self.zombie_count + 1):
+            self.zombies.put(
+                Humanoid(
+                    hit_chance=self.zombify_chance,
+                    is_zombie=True,
+                    zombie_variety=self.zombie_variety
+                )
+            )
 
-    def start_fights(self) -> timedelta:
+    def _start_fights(self) -> timedelta:
         start_time = datetime.now()
         fights: List[threading.Thread] = []
         for survivor in self.survivors:
             fight = threading.Thread(
-                target=self.fight_execution,
+                target=self._fight_execution,
                 kwargs=dict(survivor=survivor)
             )
             fights.append(fight)
@@ -86,16 +123,17 @@ class ZombieSurvival:
 
         return datetime.now() - start_time
 
-    def fight_execution(self, survivor: Survior) -> None:
+    def _fight_execution(self, survivor: Humanoid) -> None:
         """ Handles fights between one Survivor and all Zombies """
 
         while not self.zombies.empty():
             zombie = self.zombies.get()
-            print(f'{survivor.name} greift {zombie.name} an.')
+            if self.storymode:
+                print(f'{survivor} greift Zombie {zombie} an.')
 
             # Survivor attacks zombie
             if random.randint(1, 100) < survivor.hit_chance:
-                print(f'*Klatsch*, {survivor.name} erschlägt {zombie.name}.')
+                print(f'*Klatsch* {survivor.name} erschlägt den Zombie {zombie.name}.')
                 self.zombies.task_done()
                 continue
             else:
@@ -103,74 +141,146 @@ class ZombieSurvival:
                 self.zombies.put(zombie)
 
             # Zombie attacks survivor
-            if random.randint(1, 100) < zombie.hit_chance:
-                print(f'{survivor.name} wird von {zombie.name} gebissen und verwandelt sich.')
-                survivor.dead = True
-                new_zombie = Zombie(hit_chance=self.parameters['zombify_chance'], first_name=survivor.first_name, last_name=survivor.last_name)
-                self.zombies.put(new_zombie)
+            if random.randint(1, 100) < (zombie.hit_chance - survivor.defense):
+                print(f'{survivor.name} wird von Zombie {zombie.name} gebissen und verwandelt sich.')
+                survivor.zombify(hit_chance=self.zombify_chance, zombie_variety=self.zombie_variety)
+                self.zombies.put(survivor)
                 return
             else:
                 survivor.evaded = True  # Optional
                 print(f'{survivor.name}: "Juhu"')
 
     @staticmethod
-    def ask_player_to_play() -> bool:
+    def _show_menu() -> Optional[Literal['start', 'options']]:
         result = prompt({
             'type': 'list',
-            'name': 'play',
+            'name': 'selection',
             'message': 'Willkommen bei ZombieSurvival',
             'choices': [
                 {
                     "name": "Start",
-                    "value": True,
+                    "value": "start",
+                },
+                {
+                    "name": "Einstellungen",
+                    "value": "options",
                 },
                 {
                     "name": "Beenden",
-                    "value": False,
+                    "value": None,
                 }
             ]
         })
-        return result.get('play', False)
+        return result.get('selection')
 
-    @staticmethod
-    def ask_game_parameters() -> Optional[GameParameters]:
-        return prompt([
-            {
-                'type': 'input',
-                'name': 'zombie_count',
-                'message': 'Wie viele Zombies soll es am Anfang des Szenarios geben?',
-                'validate': ValidateCount,
-                'filter': lambda a: int(a)
-            },
-            {
-                'type': 'input',
-                'name': 'suvivor_count',
-                'message': 'Wie viele Überlebende soll es am Anfang des Szenarios geben?',
-                'validate': ValidateCount,
-                'filter': lambda a: int(a)
-            },
-            {
-                'type': 'input',
-                'name': 'hit_chance',
-                'message': 'Welche Trefferwahrscheinlichkeit haben die Überlebenden um Zombies zu töten?',
-                'validate': ValidateChance,
-                'filter': lambda a: int(a)
-            },
-            {
-                'type': 'input',
-                'name': 'zombify_chance',
-                'message': 'Wie hoch ist die Wahrscheinlichkeit von einem Zombie verwandelt zu werden?',
-                'validate': ValidateChance,
-                'filter': lambda a: int(a)
-            },
-        ])
+    def _show_options(self):
+        answer = prompt({
+            'type': 'list',
+            'name': 'option',
+            'message': "Einstellungen",
+            'choices': [
+                {
+                    "name": f"Anzahl Zombies ({self.zombie_count})",
+                    "value": {
+                        'type': 'input',
+                        'name': 'zombie_count',
+                        'message': 'Wie viele Zombies soll es am Anfang des Szenarios geben?',
+                        'validate': validate_count,
+                        'filter': lambda a: int(a)
+                    }
+                },
+                {
+                    "name": f"Anzahl Überlebende ({self.survivor_count})",
+                    "value": {
+                        'type': 'input',
+                        'name': 'survivor_count',
+                        'message': 'Wie viele Überlebende soll es am Anfang des Szenarios geben?',
+                        'validate': validate_count,
+                        'filter': lambda a: int(a)
+                    }
+                },
+                {
+                    "name": f"Trefferchance Überlebende ({self.hit_chance}%)",
+                    "value": {
+                        'type': 'input',
+                        'name': 'hit_chance',
+                        'message': 'Welche Trefferwahrscheinlichkeit haben die Überlebenden um Zombies zu töten?',
+                        'validate': validate_chance,
+                        'filter': lambda a: int(a)
+                    }
+                },
+                {
+                    "name": f"Trefferchance Zombies ({self.zombify_chance}%)",
+                    "value": {
+                        'type': 'input',
+                        'name': 'zombify_chance',
+                        'message': 'Wie hoch ist die Wahrscheinlichkeit von einem Zombie verwandelt zu werden?',
+                        'validate': validate_chance,
+                        'filter': lambda a: int(a)
+                    }
+                },
+                Separator(),
+                {
+                    "name": f"Storymodus ({'Ja' if self.storymode else 'Nein'})",
+                    "value": {
+                        'type': 'confirm',
+                        'name': 'storymode',
+                        'message': 'Soll der Storymodus aktiviert werden?',
+                        'default': False,
+                    }
+                },
+                {
+                    "name": f"Zombie Variation (+/- {self.zombie_variety}%)",
+                    "value": {
+                        'type': 'input',
+                        'name': 'zombie_variety',
+                        'message': 'Wie groß soll die Varianz zwischen einzelnen Zombies sein?',
+                        'validate': validate_variety,
+                        'filter': lambda a: int(a)
+                    }
+                },
+                {
+                    "name": f"Waffen Variation (0 ~ {self.weapon_variety}%)",
+                    "value": {
+                        'type': 'input',
+                        'name': 'weapon_variety',
+                        'message': 'Wie groß soll die Varianz der Waffen von Überlebenden sein?',
+                        'validate': validate_variety,
+                        'filter': lambda a: int(a)
+                    }
+                },
+                {
+                    "name": f"Rüstungs Variation (0 ~ {self.armor_variety}%)",
+                    "value": {
+                        'type': 'input',
+                        'name': 'armor_variety',
+                        'message': 'Wie groß soll die Varianz der Rüstungen von Überlebenden sein?',
+                        'validate': validate_variety,
+                        'filter': lambda a: int(a)
+                    }
+                },
+                {
+                    "name": "Zurück",
+                    "value": None
+                }
+            ]
+        })
+
+        selected_option = answer.get('option')
+        if selected_option is None:
+            return
+
+        option_name = selected_option.get('name')
+        changed_option = prompt(selected_option).get(option_name)
+
+        if changed_option is None:
+            self._show_options()
+            return
+
+        setattr(self, option_name, changed_option)
+        self._show_options()
 
 
 if __name__ == '__main__':
-    close = False
-    while not close:
-        if ZombieSurvival.ask_player_to_play():
-            ZombieSurvival()
-        else:
-            close = True
-    exit(0)
+    game = ZombieSurvival()
+    game.run()

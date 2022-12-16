@@ -1,33 +1,40 @@
-from prompt_toolkit.validation import Validator, ValidationError
+from typing import Union, Literal
 
-__all__ = ['ValidateCount', 'ValidateChance']
+__all__ = ['validate_variety', 'validate_count', 'validate_chance']
 
 
-class ValidateCount(Validator):
-    def validate(self, document):
-        try:
-            value = int(document.text)
-        except ValueError:
-            raise ValidationError(
-                message='Bitte gebe eine valide Zahl ein',
-                cursor_position=len(document.text)
-            )
+def validate_int(value: str) -> Union[str, int]:
+    try:
+        return int(value)
+    except ValueError:
+        return 'Bitte gebe eine valide Zahl ein'
 
-        if value < 1:
-            raise ValidationError(
-                message='Bitte gebe eine Zahl größer 0 ein',
-                cursor_position=len(document.text)
-            )
+
+def validate_count(value: str) -> Union[str, Literal[True]]:
+    value = validate_int(value)
+    if not isinstance(value, int):
         return value
 
+    if value < 1:
+        return 'Bitte gebe eine Zahl größer 0 ein'
+    return True
 
-class ValidateChance(ValidateCount):
-    def validate(self, document):
-        chance = super().validate(document)
 
-        if chance not in range(0, 100):
-            raise ValidationError(
-                message='Bitte gebe eine valide Zahl zwischen 1 und 99 an',
-                cursor_position=len(document.text)
-            )
-        return chance
+def validate_variety(value: str) -> Union[str, Literal[True]]:
+    value = validate_int(value)
+    if not isinstance(value, int):
+        return value
+
+    if value < 0:
+        return 'Bitte gebe eine positive Zahl ein'
+    return True
+
+
+def validate_chance(value: str) -> Union[str, Literal[True]]:
+    value = validate_int(value)
+    if not isinstance(value, int):
+        return value
+
+    if value not in range(0, 100):
+        return 'Bitte gebe eine valide Zahl zwischen 1 und 99 an'
+    return True
