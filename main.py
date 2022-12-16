@@ -75,7 +75,7 @@ class ZombieSurvival:
         for survivor in self.survivors:
             fight = threading.Thread(
                 target=self.fight_execution,
-                args=(survivor,)
+                kwargs=dict(survivor=survivor)
             )
             fights.append(fight)
             fight.start()
@@ -108,6 +108,7 @@ class ZombieSurvival:
                 survivor.dead = True
                 new_zombie = Zombie(hit_chance=self.parameters['zombify_chance'], first_name=survivor.first_name, last_name=survivor.last_name)
                 self.zombies.put(new_zombie)
+                return
             else:
                 survivor.evaded = True  # Optional
                 print(f'{survivor.name}: "Juhu"')
