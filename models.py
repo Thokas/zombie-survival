@@ -11,11 +11,19 @@ class Humanoid:
     _hit_modifier: int
     _defense_modifier: int
     _zombie: bool
-    name: Optional[str]
+    name: str
     evaded: bool
 
-    def __init__(self, hit_chance: int, is_zombie: bool = False, zombie_variety: int = None, weapon_variety: int = None, armor_variety: int = None):
-        self.name = f'{get_first_name()} {get_last_name()}'
+    def __init__(
+            self,
+            hit_chance: int,
+            is_zombie: bool = False,
+            zombie_variety: int = None,
+            weapon_variety: int = None,
+            armor_variety: int = None,
+            name: str = None
+    ):
+        self.name = name if name else f'{get_first_name()} {get_last_name()}'
         self.hit_chance = hit_chance
         self._hit_modifier = 0
         self._defense_modifier = 0
@@ -23,7 +31,6 @@ class Humanoid:
         self.evaded = False
 
         if is_zombie:
-            self.name = None
             self.zombify(hit_chance=hit_chance, zombie_variety=zombie_variety)
         else:
             # Optional: Setup Weapons/Armors
@@ -34,7 +41,7 @@ class Humanoid:
         self._zombie = True
         self.hit_chance = hit_chance
         self._hit_modifier = random.randint(-zombie_variety, zombie_variety) if isinstance(zombie_variety, int) else 0
-        print(f'{self.name}: "Grrrrr"')
+        print(f'Zombie {self.name}: "Grrrrr"')
 
     @property
     def hit_chance(self) -> int:

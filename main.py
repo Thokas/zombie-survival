@@ -104,7 +104,8 @@ class ZombieSurvival:
                 Humanoid(
                     hit_chance=self.zombify_chance,
                     is_zombie=True,
-                    zombie_variety=self.zombie_variety
+                    zombie_variety=self.zombie_variety,
+                    name=str(_+1)
                 )
             )
 
@@ -131,7 +132,7 @@ class ZombieSurvival:
         while not self.zombies.empty():
             zombie = self.zombies.get()
             if self.storymode:
-                print(f'{survivor} greift Zombie {zombie} an.')
+                print(f'{survivor} greift den Zombie {zombie} an.')
 
             # Survivor attacks zombie
             if random.randint(1, 100) < survivor.hit_chance:
