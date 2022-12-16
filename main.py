@@ -28,6 +28,9 @@ class ZombieSurvival:
     armor_variety: Optional[int]
 
     def __init__(self):
+        self.zombies = Queue()
+        self.survivors = list()
+
         self.zombie_count = 20
         self.survivor_count = 5
         self.hit_chance = 60
@@ -55,19 +58,18 @@ class ZombieSurvival:
         self._setup_game()
 
         execution_time = self._start_fights()
-        time_readable = round(execution_time.total_seconds(), 2)
 
         if self.storymode:
-            print(f'Nach grade mal {time_readable}s ist die Schlacht vorbei.')
+            print(f'Nach grade mal {round(execution_time.total_seconds())} Stunde(n) ist die Schlacht vorbei.')
         else:
-            print(f'Dauer: {time_readable}s')
+            print(f'Dauer: {execution_time}')
 
         if any(self.survivors):
             survived = [s for s in self.survivors if s]
             if self.storymode:
                 died = [s for s in self.survivors if not s]
                 if len(survived) == 1:
-                    print(f'Nur ein Überlebender steht noch:')
+                    print('Nur ein Überlebender steht noch:')
                 else:
                     print(f'{len(survived)} haben überlebt, darunter sind:')
                 for survivor in survived:
@@ -97,7 +99,7 @@ class ZombieSurvival:
 
         # setup Zombies
         self.zombies = Queue()
-        for _ in range(1, self.zombie_count + 1):
+        for _ in range(0, self.zombie_count):
             self.zombies.put(
                 Humanoid(
                     hit_chance=self.zombify_chance,
