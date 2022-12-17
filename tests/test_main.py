@@ -231,7 +231,8 @@ class ZombieSurvivalTest(TestCase):
     @patch('main.ZombieSurvival._fight_execution')
     def test__start_fights(self, mock_fight: MagicMock, mock_thread: MagicMock, mock_datetime: MagicMock):
         # setup
-        mock_datetime.now = MagicMock(side_effect=[datetime.now(), datetime.now() + timedelta(seconds=10)])
+        date_now = datetime.now()
+        mock_datetime.now = MagicMock(side_effect=[date_now, date_now + timedelta(seconds=10)])
         survivor = Humanoid(hit_chance=5)
         survivor2 = Humanoid(hit_chance=6)
         survivor3 = Humanoid(hit_chance=9)
