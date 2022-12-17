@@ -1,5 +1,6 @@
 from datetime import timedelta, datetime
 from unittest import mock, TestCase
+from unittest.mock import patch, MagicMock, Mock
 
 import main
 from models import Humanoid
@@ -21,8 +22,8 @@ class ZombieSurvivalTest(TestCase):
         self.assertEqual(self.game.weapon_variety, 0)
         self.assertEqual(self.game.armor_variety, 0)
 
-    @mock.patch('main.ZombieSurvival._show_menu', side_effect=['start', 'start', None])
-    @mock.patch('main.ZombieSurvival.start')
+    @patch('main.ZombieSurvival._show_menu', side_effect=['start', 'start', None])
+    @patch('main.ZombieSurvival.start')
     def test_run__loops(self, mock_start, mock_menu):
         with self.assertRaises(SystemExit) as e:
             self.game.run()
@@ -31,17 +32,17 @@ class ZombieSurvivalTest(TestCase):
         self.assertEqual(mock_start.call_count, 2)
         self.assertEqual(mock_menu.call_count, 3)
 
-    @mock.patch('main.ZombieSurvival._show_menu', return_value=None)
-    def test_run__exit(self, mock_menu: mock.MagicMock):
+    @patch('main.ZombieSurvival._show_menu', return_value=None)
+    def test_run__exit(self, mock_menu: MagicMock):
         with self.assertRaises(SystemExit) as e:
             self.game.run()
 
         self.assertEqual(e.exception.args[0], 0)
         self.assertEqual(mock_menu.call_count, 1)
 
-    @mock.patch('main.ZombieSurvival._show_menu', side_effect=['start', None])
-    @mock.patch('main.ZombieSurvival.start')
-    def test_run__option_start(self, mock_start: mock.MagicMock, mock_menu: mock.MagicMock):
+    @patch('main.ZombieSurvival._show_menu', side_effect=['start', None])
+    @patch('main.ZombieSurvival.start')
+    def test_run__option_start(self, mock_start: MagicMock, mock_menu: MagicMock):
         with self.assertRaises(SystemExit) as e:
             self.game.run()
 
@@ -49,10 +50,11 @@ class ZombieSurvivalTest(TestCase):
         self.assertEqual(mock_start.call_count, 1)
         self.assertEqual(mock_menu.call_count, 2)
 
-    @mock.patch('main.ZombieSurvival._show_menu', side_effect=['settings', None])
-    @mock.patch('main.ZombieSurvival.start')
-    @mock.patch('main.ZombieSurvival._show_settings')
-    def test_run__option_settings(self, mock_settings: mock.MagicMock, mock_start: mock.MagicMock, mock_menu: mock.MagicMock):
+    @patch('main.ZombieSurvival._show_menu', side_effect=['settings', None])
+    @patch('main.ZombieSurvival.start')
+    @patch('main.ZombieSurvival._show_settings')
+    def test_run__option_settings(self, mock_settings: MagicMock, mock_start: MagicMock,
+                                  mock_menu: MagicMock):
         with self.assertRaises(SystemExit) as e:
             self.game.run()
 
@@ -61,10 +63,10 @@ class ZombieSurvivalTest(TestCase):
         self.assertEqual(mock_settings.call_count, 1)
         self.assertEqual(mock_menu.call_count, 2)
 
-    @mock.patch('main.ZombieSurvival._setup_game')
-    @mock.patch('main.ZombieSurvival._start_fights', return_value=timedelta(seconds=1))
-    @mock.patch('builtins.print')
-    def test_start__win(self, mock_print: mock.MagicMock, mock_fights: mock.MagicMock, mock_setup: mock.MagicMock):
+    @patch('main.ZombieSurvival._setup_game')
+    @patch('main.ZombieSurvival._start_fights', return_value=timedelta(seconds=1))
+    @patch('builtins.print')
+    def test_start__win(self, mock_print: MagicMock, mock_fights: MagicMock, mock_setup: MagicMock):
         # setup
         self.game.storymode = False
         survivor = Humanoid(hit_chance=1)
@@ -82,10 +84,10 @@ class ZombieSurvivalTest(TestCase):
             mock.call('Anzahl: 1')
         ])
 
-    @mock.patch('main.ZombieSurvival._setup_game')
-    @mock.patch('main.ZombieSurvival._start_fights', return_value=timedelta(seconds=2))
-    @mock.patch('builtins.print')
-    def test_start__lose(self, mock_print: mock.MagicMock, mock_fights: mock.MagicMock, mock_setup: mock.MagicMock):
+    @patch('main.ZombieSurvival._setup_game')
+    @patch('main.ZombieSurvival._start_fights', return_value=timedelta(seconds=2))
+    @patch('builtins.print')
+    def test_start__lose(self, mock_print: MagicMock, mock_fights: MagicMock, mock_setup: MagicMock):
         # setup
         self.game.storymode = False
         survivor = Humanoid(hit_chance=2)
@@ -105,10 +107,10 @@ class ZombieSurvivalTest(TestCase):
             mock.call('Anzahl: 1')
         ])
 
-    @mock.patch('main.ZombieSurvival._setup_game')
-    @mock.patch('main.ZombieSurvival._start_fights', return_value=timedelta(seconds=3))
-    @mock.patch('builtins.print')
-    def test_start__storymode_win_single(self, mock_print: mock.MagicMock, mock_fights: mock.MagicMock, mock_setup: mock.MagicMock):
+    @patch('main.ZombieSurvival._setup_game')
+    @patch('main.ZombieSurvival._start_fights', return_value=timedelta(seconds=3))
+    @patch('builtins.print')
+    def test_start__storymode_win_single(self, mock_print: MagicMock, mock_fights: MagicMock, mock_setup: MagicMock):
         # setup
         self.game.storymode = True
         survivor = Humanoid(hit_chance=3)
@@ -127,14 +129,14 @@ class ZombieSurvivalTest(TestCase):
             mock.call('Nach grade mal 3 Stunde(n) ist die Schlacht vorbei.'),
             mock.call('Nur ein Überlebender steht noch:'),
             mock.call(f'  {survivor}'),
-            mock.call(f'1 sind gefallen, ihre Namen sind:'),
+            mock.call('1 sind gefallen, ihre Namen sind:'),
             mock.call(f'  † {survivor2}')
         ])
 
-    @mock.patch('main.ZombieSurvival._setup_game')
-    @mock.patch('main.ZombieSurvival._start_fights', return_value=timedelta(seconds=3))
-    @mock.patch('builtins.print')
-    def test_start__storymode_win_multi(self, mock_print: mock.MagicMock, mock_fights: mock.MagicMock, mock_setup: mock.MagicMock):
+    @patch('main.ZombieSurvival._setup_game')
+    @patch('main.ZombieSurvival._start_fights', return_value=timedelta(seconds=3))
+    @patch('builtins.print')
+    def test_start__storymode_win_multi(self, mock_print: MagicMock, mock_fights: MagicMock, mock_setup: MagicMock):
         # setup
         self.game.storymode = True
         survivor = Humanoid(hit_chance=6)
@@ -155,10 +157,10 @@ class ZombieSurvivalTest(TestCase):
             mock.call(f'  {survivor2}')
         ])
 
-    @mock.patch('main.ZombieSurvival._setup_game')
-    @mock.patch('main.ZombieSurvival._start_fights', return_value=timedelta(seconds=4))
-    @mock.patch('builtins.print')
-    def test_start__storymode_lose(self, mock_print: mock.MagicMock, mock_fights: mock.MagicMock, mock_setup: mock.MagicMock):
+    @patch('main.ZombieSurvival._setup_game')
+    @patch('main.ZombieSurvival._start_fights', return_value=timedelta(seconds=4))
+    @patch('builtins.print')
+    def test_start__storymode_lose(self, mock_print: MagicMock, mock_fights: MagicMock, mock_setup: MagicMock):
         # setup
         self.game.storymode = True
         survivor = Humanoid(hit_chance=5)
@@ -179,11 +181,11 @@ class ZombieSurvivalTest(TestCase):
             mock.call('Die Nacht bricht an und die Zombies regen sich...'),
             mock.call('Nach grade mal 4 Stunde(n) ist die Schlacht vorbei.'),
             mock.call('Leider überwältigten die Zombies alle Überlebenden.'),
-            mock.call(f'So streifen jetzt 2 Zombies weiter durch das Land.')
+            mock.call('So streifen jetzt 2 Zombies weiter durch das Land.')
         ])
 
-    @mock.patch('builtins.print')
-    def test__setup_game(self, mock_print: mock.MagicMock):
+    @patch('builtins.print')
+    def test__setup_game(self, mock_print: MagicMock):
         # setup
         self.game.storymode = False
         self.game.survivor_count = 1
@@ -201,8 +203,8 @@ class ZombieSurvivalTest(TestCase):
         self.assertEqual(len(self.game.survivors), 1)
         mock_print.assert_called_once_with('Grrrrr')
 
-    @mock.patch('builtins.print')
-    def test__setup_game__storymode(self, mock_print: mock.MagicMock):
+    @patch('builtins.print')
+    def test__setup_game__storymode(self, mock_print: MagicMock):
         # setup
         self.game.storymode = True
         self.game.survivor_count = 5
@@ -224,12 +226,12 @@ class ZombieSurvivalTest(TestCase):
             mock.call('Zombie 3: "Grrrrr"'),
         ])
 
-    @mock.patch('main.datetime')
-    @mock.patch('threading.Thread')
-    @mock.patch('main.ZombieSurvival._fight_execution')
-    def test__start_fights(self, mock_fight: mock.MagicMock, mock_thread: mock.MagicMock, mock_datetime: mock.MagicMock):
+    @patch('main.datetime')
+    @patch('threading.Thread')
+    @patch('main.ZombieSurvival._fight_execution')
+    def test__start_fights(self, mock_fight: MagicMock, mock_thread: MagicMock, mock_datetime: MagicMock):
         # setup
-        mock_datetime.now = mock.MagicMock(side_effect=[datetime.now(), datetime.now() + timedelta(seconds=10)])
+        mock_datetime.now = MagicMock(side_effect=[datetime.now(), datetime.now() + timedelta(seconds=10)])
         survivor = Humanoid(hit_chance=5)
         survivor2 = Humanoid(hit_chance=6)
         survivor3 = Humanoid(hit_chance=9)
@@ -252,8 +254,8 @@ class ZombieSurvivalTest(TestCase):
         ])
         self.assertEqual(result, timedelta(seconds=10))
 
-    @mock.patch('builtins.print')
-    def test__fight_execution__no_zombie(self, mock_print: mock.MagicMock):
+    @patch('builtins.print')
+    def test__fight_execution__no_zombie(self, mock_print: MagicMock):
         # setup
         self.game.storymode = False
         survivor = Humanoid(hit_chance=1)
@@ -265,9 +267,9 @@ class ZombieSurvivalTest(TestCase):
         # postcondition
         mock_print.assert_not_called()
 
-    @mock.patch('random.randint', mock.Mock(return_value=0))
-    @mock.patch('builtins.print')
-    def test__fight_execution__kill_zombie(self, mock_print: mock.MagicMock):
+    @patch('random.randint', Mock(return_value=0))
+    @patch('builtins.print')
+    def test__fight_execution__kill_zombie(self, mock_print: MagicMock):
         # setup
         self.game.storymode = False
         survivor = Humanoid(hit_chance=1)
@@ -281,15 +283,15 @@ class ZombieSurvivalTest(TestCase):
         # postcondition
         mock_print.assert_called_once_with('Klatsch')
 
-    @mock.patch('random.randint', mock.Mock(side_effect=[100, 0, 5]))  # Last value to prevent exception in zombification
-    @mock.patch('builtins.print')
-    def test__fight_execution__zombie_bites(self, mock_print: mock.MagicMock):
+    @patch('random.randint', Mock(side_effect=[100, 0, 5]))  # Last value to prevent exception in zombification
+    @patch('builtins.print')
+    def test__fight_execution__zombie_bites(self, mock_print: MagicMock):
         # setup
         self.game.storymode = False
-        survivor = Humanoid(hit_chance=1)
-        self.game.survivors = [survivor]
         zombie = Humanoid(hit_chance=1, is_zombie=True, name='Foo')
         self.game.zombies.put(zombie)
+        survivor = Humanoid(hit_chance=1)
+        self.game.survivors = [survivor]
 
         # do it
         self.game._fight_execution(survivor=survivor)
@@ -300,9 +302,9 @@ class ZombieSurvivalTest(TestCase):
             mock.call('Grrrrr'),
         ])
 
-    @mock.patch('random.randint', side_effect=[100, 100, 0])
-    @mock.patch('builtins.print')
-    def test__fight_execution__zombie_misses(self, mock_print: mock.MagicMock, mock_randint: mock.MagicMock):
+    @patch('random.randint', side_effect=[100, 100, 0])
+    @patch('builtins.print')
+    def test__fight_execution__zombie_misses(self, mock_print: MagicMock, mock_randint: MagicMock):
         # setup
         self.game.storymode = False
         survivor = Humanoid(hit_chance=1)
@@ -322,9 +324,9 @@ class ZombieSurvivalTest(TestCase):
             mock.call('Klatsch'),
         ])
 
-    @mock.patch('random.randint', mock.Mock(side_effect=[100, 0]))
-    @mock.patch('builtins.print')
-    def test__fight_execution__storymode_no_zombie(self, mock_print: mock.MagicMock):
+    @patch('random.randint', Mock(side_effect=[100, 0]))
+    @patch('builtins.print')
+    def test__fight_execution__storymode_no_zombie(self, mock_print: MagicMock):
         # setup
         self.game.storymode = True
         survivor = Humanoid(hit_chance=100)
@@ -336,9 +338,9 @@ class ZombieSurvivalTest(TestCase):
         # postcondition
         mock_print.assert_not_called()
 
-    @mock.patch('random.randint', mock.Mock(return_value=0))
-    @mock.patch('builtins.print')
-    def test__fight_execution__storymode_kill_zombie(self, mock_print: mock.MagicMock):
+    @patch('random.randint', Mock(return_value=0))
+    @patch('builtins.print')
+    def test__fight_execution__storymode_kill_zombie(self, mock_print: MagicMock):
         # setup
         self.game.storymode = True
         survivor = Humanoid(hit_chance=100)
@@ -355,8 +357,8 @@ class ZombieSurvivalTest(TestCase):
             mock.call(f'*Klatsch* {survivor.name} erschlägt den Zombie {zombie.name}.'),
         ])
 
-    @mock.patch('builtins.print')
-    def test__fight_execution__storymode_zombie_bites(self, mock_print: mock.MagicMock):
+    @patch('builtins.print')
+    def test__fight_execution__storymode_zombie_bites(self, mock_print: MagicMock):
         # setup
         self.game.storymode = True
         survivor = Humanoid(hit_chance=0)
@@ -375,15 +377,15 @@ class ZombieSurvivalTest(TestCase):
             mock.call(f'Zombie {survivor.name}: "Grrrrr"')
         ])
 
-    @mock.patch('random.randint', side_effect=[100, 100, 0])
-    @mock.patch('builtins.print')
-    def test__fight_execution__storymode_zombie_misses(self, mock_print: mock.MagicMock, mock_randint: mock.MagicMock):
+    @patch('random.randint', side_effect=[100, 100, 0])
+    @patch('builtins.print')
+    def test__fight_execution__storymode_zombie_misses(self, mock_print: MagicMock, mock_randint: MagicMock):
         # setup
         self.game.storymode = True
-        survivor = Humanoid(hit_chance=1)
-        self.game.survivors = [survivor]
         zombie = Humanoid(hit_chance=1, is_zombie=True, name='Foo')
         self.game.zombies.put(zombie)
+        survivor = Humanoid(hit_chance=1)
+        self.game.survivors = [survivor]
 
         # do it
         self.game._fight_execution(survivor=survivor)
@@ -399,8 +401,8 @@ class ZombieSurvivalTest(TestCase):
             mock.call(f'*Klatsch* {survivor.name} erschlägt den Zombie {zombie.name}.'),
         ])
 
-    @mock.patch('main.prompt', return_value=dict())
-    def test__show_menu__no_selection(self, mock_prompt: mock.MagicMock):
+    @patch('main.prompt', return_value=dict())
+    def test__show_menu__no_selection(self, mock_prompt: MagicMock):
         # do it
         result = self.game._show_menu()
 
@@ -408,8 +410,8 @@ class ZombieSurvivalTest(TestCase):
         self.assertIsNone(result)
         mock_prompt.assert_called_once()
 
-    @mock.patch('main.prompt', return_value=dict(selection='foo'))
-    def test__show_menu(self, mock_prompt: mock.MagicMock):
+    @patch('main.prompt', return_value=dict(selection='foo'))
+    def test__show_menu(self, mock_prompt: MagicMock):
         # do it
         result = self.game._show_menu()
 
@@ -426,8 +428,8 @@ class ZombieSurvivalTest(TestCase):
         self.assertEqual(prompt_args['choices'][1], {"name": "Einstellungen", "value": "settings"})
         self.assertEqual(prompt_args['choices'][2], {"name": "Beenden", "value": None})
 
-    @mock.patch('main.ZombieSurvival._ask_settings', side_effect=[True, True, False])
-    def test__show_settings__loops_asking(self, mock_ask_settings: mock.MagicMock):
+    @patch('main.ZombieSurvival._ask_settings', side_effect=[True, True, False])
+    def test__show_settings__loops_asking(self, mock_ask_settings: MagicMock):
         # do it
         self.game._show_settings()
 
@@ -438,8 +440,8 @@ class ZombieSurvivalTest(TestCase):
             mock.call()
         ])
 
-    @mock.patch('main.prompt', return_value=dict())
-    def test__ask_settings__no_selection(self, mock_prompt: mock.MagicMock):
+    @patch('main.prompt', return_value=dict())
+    def test__ask_settings__no_selection(self, mock_prompt: MagicMock):
         # do it
         result = self.game._ask_settings()
 
@@ -447,8 +449,8 @@ class ZombieSurvivalTest(TestCase):
         mock_prompt.assert_called_once()
         self.assertFalse(result)
 
-    @mock.patch('main.prompt', side_effect=[dict(option={'name': 'foo'}), dict(foo=None)])
-    def test__ask_settings__selection_with_no_change(self, mock_prompt: mock.MagicMock):
+    @patch('main.prompt', side_effect=[dict(option={'name': 'foo'}), dict(foo=None)])
+    def test__ask_settings__selection_with_no_change(self, mock_prompt: MagicMock):
         # do it
         result = self.game._ask_settings()
 
@@ -456,8 +458,8 @@ class ZombieSurvivalTest(TestCase):
         mock_prompt.assert_called_with(dict(name='foo'))
         self.assertFalse(result)
 
-    @mock.patch('main.prompt', side_effect=[dict(option={'name': 'foo'}), dict(foo='bar')])
-    def test__ask_settings__selection_with_change(self, mock_prompt: mock.MagicMock):
+    @patch('main.prompt', side_effect=[dict(option={'name': 'foo'}), dict(foo='bar')])
+    def test__ask_settings__selection_with_change(self, mock_prompt: MagicMock):
         # do it
         result = self.game._ask_settings()
 
