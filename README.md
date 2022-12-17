@@ -37,3 +37,8 @@ python main.py
 ```shell
 python test.py
 ```
+
+## Execute Linting
+```shell
+python -m flake8 .
+```
