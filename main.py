@@ -100,14 +100,17 @@ class ZombieSurvival:
         # setup Zombies
         self.zombies = Queue()
         for _ in range(0, self.zombie_count):
-            self.zombies.put(
-                Humanoid(
-                    hit_chance=self.zombify_chance,
-                    is_zombie=True,
-                    zombie_variety=self.zombie_variety,
-                    name=str(_+1)
-                )
+            zombie = Humanoid(
+                hit_chance=self.zombify_chance,
+                is_zombie=True,
+                zombie_variety=self.zombie_variety,
+                name=str(_ + 1)
             )
+            if self.storymode:
+                print(f'Zombie {zombie.name}: "Grrrrr"')
+            else:
+                print('Grrrrr')
+            self.zombies.put(zombie)
 
     def _start_fights(self) -> timedelta:
         start_time = datetime.now()
@@ -136,22 +139,35 @@ class ZombieSurvival:
 
             # Survivor attacks zombie
             if random.randint(1, 100) < survivor.hit_chance:
-                print(f'*Klatsch* {survivor.name} erschlägt den Zombie {zombie.name}.')
+                if self.storymode:
+                    print(f'*Klatsch* {survivor.name} erschlägt den Zombie {zombie.name}.')
+                else:
+                    print('Klatsch')
                 self.zombies.task_done()
                 continue
             else:
-                print(f'{survivor.name}: "Mist!"')
+                if self.storymode:
+                    print(f'{survivor.name}: "Mist!"')
+                else:
+                    print('Mist!')
                 self.zombies.put(zombie)
 
             # Zombie attacks survivor
             if random.randint(1, 100) < (zombie.hit_chance - survivor.defense):
-                print(f'{survivor.name} wird von Zombie {zombie.name} gebissen und verwandelt sich.')
                 survivor.zombify(hit_chance=self.zombify_chance, zombie_variety=self.zombie_variety)
+                if self.storymode:
+                    print(f'{survivor.name} wird von Zombie {zombie.name} gebissen und verwandelt sich.')
+                    print(f'Zombie {survivor.name}: "Grrrrr"')
+                else:
+                    print('Grrrrr')
                 self.zombies.put(survivor)
                 return
             else:
                 survivor.evaded = True  # Optional
-                print(f'{survivor.name}: "Juhu"')
+                if self.storymode:
+                    print(f'{survivor.name}: "Juhu"')
+                else:
+                    print('Juhu')
 
     @staticmethod
     def _show_menu() -> Optional[Literal['start', 'settings']]:
@@ -279,15 +295,14 @@ class ZombieSurvival:
             return False
 
         option_name = selected_option.get('name')
-        changed_option = prompt(selected_option).get(option_name)
+        option_new_value = prompt(selected_option).get(option_name)
 
-        if changed_option is None:
+        if option_new_value is None:
             return False
 
-        setattr(self, option_name, changed_option)
+        setattr(self, option_name, option_new_value)
         return True
 
 
-if __name__ == '__main__':
-    game = ZombieSurvival()
-    game.run()
+if __name__ == '__main__':  # pragma: no cover
+    ZombieSurvival().run()

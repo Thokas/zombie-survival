@@ -41,7 +41,6 @@ class Humanoid:
         self._zombie = True
         self.hit_chance = hit_chance
         self._hit_modifier = random.randint(-zombie_variety, zombie_variety) if isinstance(zombie_variety, int) else 0
-        print(f'Zombie {self.name}: "Grrrrr"')
 
     @property
     def hit_chance(self) -> int:
