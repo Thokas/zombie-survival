@@ -1,5 +1,5 @@
 import random
-from typing import Optional, List
+from typing import List
 
 from names import get_first_name, get_last_name
 
@@ -79,4 +79,4 @@ class Humanoid:
         return not self._zombie
 
     def __repr__(self):
-        return f'{self.name or ""}{self.modifier_info}'
+        return f'{self.name}{self.modifier_info}'
